@@ -421,6 +421,47 @@ def inject_metadata(img_bytes, row, ext, output_format=None):
             except Exception:
                 pass
 
+        # ── Advanced Technical Signals ────────────────────────────────────
+        # Rating (0-5 scale → stored as 0-100 in XP Rating)
+        rating = str(row.get("rating", "")).strip()
+        if rating:
+            try:
+                r = int(float(rating))
+                r_xp = min(max(r, 0), 5) * 20          # 0-5 → 0,20,40,60,80,100
+                exif_dict["0th"][piexif.ImageIFD.Rating]       = r_xp
+                exif_dict["0th"][piexif.ImageIFD.RatingPercent]= r_xp
+            except Exception:
+                pass
+
+        # Subject Distance → creates realistic portrait depth signal for Google AI
+        subj_dist = str(row.get("subject_distance", "")).strip()
+        if subj_dist:
+            try:
+                dist_f  = float(subj_dist)
+                dist_r  = (int(dist_f * 1000), 1000)   # rational: e.g. 1.5m → (1500,1000)
+                exif_dict["Exif"][piexif.ExifIFD.SubjectDistance] = dist_r
+                # SubjectDistanceRange: 0=Unknown,1=Macro,2=Close,3=Distant
+                if dist_f < 0.5:
+                    sdr = 1
+                elif dist_f < 3.0:
+                    sdr = 2
+                else:
+                    sdr = 3
+                exif_dict["Exif"][piexif.ExifIFD.SubjectDistanceRange] = sdr
+            except Exception:
+                pass
+
+        # Camera Make / Model → signals high-quality authentic device
+        make  = str(row.get("camera_make", "")).strip()
+        model = str(row.get("camera_model", "")).strip()
+        if make:
+            exif_dict["0th"][piexif.ImageIFD.Make] = make.encode("utf-8")
+        if model:
+            exif_dict["0th"][piexif.ImageIFD.Model] = model.encode("utf-8")
+
+        # Software tag — optional branding
+        exif_dict["0th"][piexif.ImageIFD.Software] = b"GeoRank Pro"
+
         exif_bytes = piexif.dump(exif_dict)
 
     out_buf = io.BytesIO()
@@ -461,6 +502,20 @@ def read_metadata(img_bytes):
             if piexif.ImageIFD.XPKeywords in ifd0:
                 kw_raw = ifd0[piexif.ImageIFD.XPKeywords]
                 result["Keywords"] = kw_raw.decode("utf-16-le", errors="replace").rstrip("\x00")
+            if piexif.ImageIFD.Make in ifd0:
+                result["Camera Make"] = ifd0[piexif.ImageIFD.Make].decode("utf-8", errors="replace").rstrip("\x00")
+            if piexif.ImageIFD.Model in ifd0:
+                result["Camera Model"] = ifd0[piexif.ImageIFD.Model].decode("utf-8", errors="replace").rstrip("\x00")
+            if piexif.ImageIFD.Rating in ifd0:
+                r_pct = ifd0[piexif.ImageIFD.Rating]
+                result["Rating"] = f"{'⭐' * (r_pct // 20)} ({r_pct // 20}/5)"
+            exif_ifd = exif_dict.get("Exif", {})
+            if piexif.ExifIFD.SubjectDistance in exif_ifd:
+                sd = exif_ifd[piexif.ExifIFD.SubjectDistance]
+                dist_m = round(sd[0] / sd[1], 2)
+                result["Subject Distance"] = f"{dist_m} m"
+            if piexif.ImageIFD.Software in ifd0:
+                result["Software"] = ifd0[piexif.ImageIFD.Software].decode("utf-8", errors="replace").rstrip("\x00")
     except Exception as e:
         result["error"] = str(e)
     return result
@@ -594,6 +649,23 @@ with tab1:
         s_date  = st.date_input("Date Taken", value=datetime.today(), key="s_date")
 
         st.markdown('<hr class="divider">', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">🔬 Advanced Technical Signals</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-family:Space Mono,monospace;font-size:0.65rem;color:#7c3aed;margin-bottom:0.6rem">These fields inject device & depth signals that Google\'s AI uses to assess image authenticity and quality</div>', unsafe_allow_html=True)
+
+        adv1, adv2 = st.columns(2)
+        s_make  = adv1.text_input("Camera Make",  value=pfx.get("camera_make","Apple"),  placeholder="Apple", key="s_make")
+        s_model = adv2.text_input("Camera Model", value=pfx.get("camera_model","iPhone 15 Pro"), placeholder="iPhone 15 Pro", key="s_model")
+
+        adv3, adv4 = st.columns(2)
+        s_rating = adv3.selectbox("Rating ⭐", options=["","5","4","3","2","1"], index=1, key="s_rating",
+                                  help="Star rating embedded into image EXIF (5 = best)")
+        s_dist   = adv4.text_input("Subject Distance (metres)",
+                                   value=pfx.get("subject_distance","1.5"),
+                                   placeholder="1.5",
+                                   help="Creates portrait depth signal — 1.5m recommended for shopfront/product shots",
+                                   key="s_dist")
+
+        st.markdown('<hr class="divider">', unsafe_allow_html=True)
         st.markdown('<div class="section-label">🔄 Output Format</div>', unsafe_allow_html=True)
         st.markdown('<div style="font-family:Space Mono,monospace;font-size:0.65rem;color:#f59e0b;margin-bottom:0.5rem">⚠️ Google Business Profile only accepts JPG and PNG — WEBP will be rejected</div>', unsafe_allow_html=True)
         s_fmt = st.radio(
@@ -613,6 +685,8 @@ with tab1:
                         "lat": s_lat, "lng": s_lng, "keywords": s_kw,
                         "description": s_desc, "copyright": s_copy,
                         "date_taken": s_date.strftime("%Y-%m-%d"),
+                        "rating": s_rating, "subject_distance": s_dist,
+                        "camera_make": s_make, "camera_model": s_model,
                     }
                     orig_ext = single_img.name.rsplit(".", 1)[-1]
                     out_bytes, out_ext = inject_metadata(
@@ -820,24 +894,28 @@ with tab4:
     # Build sample template
     pfx2 = selected_profile or {}
     sample_data = {
-        "filename":      ["photo1.jpg", "photo2.jpg", "photo3.jpg"],
-        "business_name": [pfx2.get("business_name","ABC Plumbing")] * 3,
-        "service":       ["drain repair", "pipe installation", "emergency plumber"],
-        "location":      [pfx2.get("city","Karachi")] * 3,
-        "lat":           [pfx2.get("lat","24.8607")] * 3,
-        "lng":           [pfx2.get("lng","67.0011")] * 3,
-        "keywords":      [
+        "filename":         ["photo1.jpg", "photo2.jpg", "photo3.jpg"],
+        "business_name":    [pfx2.get("business_name","ABC Plumbing")] * 3,
+        "service":          ["drain repair", "pipe installation", "emergency plumber"],
+        "location":         [pfx2.get("city","Karachi")] * 3,
+        "lat":              [pfx2.get("lat","24.8607")] * 3,
+        "lng":              [pfx2.get("lng","67.0011")] * 3,
+        "keywords":         [
             pfx2.get("keywords","plumber karachi, drain repair, emergency plumber"),
             pfx2.get("keywords","pipe installation karachi, plumbing services"),
             pfx2.get("keywords","emergency plumber karachi, 24hr plumbing"),
         ],
-        "description":   [
+        "description":      [
             "Professional drain repair service in Karachi by ABC Plumbing",
             "Expert pipe installation services across Karachi",
             "24-hour emergency plumber available in Karachi",
         ],
-        "copyright":     [pfx2.get("copyright","ABC Plumbing 2025")] * 3,
-        "date_taken":    [datetime.today().strftime("%Y-%m-%d")] * 3,
+        "copyright":        [pfx2.get("copyright","ABC Plumbing 2025")] * 3,
+        "date_taken":       [datetime.today().strftime("%Y-%m-%d")] * 3,
+        "rating":           ["5", "5", "5"],
+        "subject_distance": ["1.5", "1.5", "2.0"],
+        "camera_make":      [pfx2.get("camera_make","Apple")] * 3,
+        "camera_model":     [pfx2.get("camera_model","iPhone 15 Pro")] * 3,
     }
     template_df = pd.DataFrame(sample_data)
 
@@ -856,16 +934,20 @@ with tab4:
     st.markdown("#### 📖 Column Reference")
 
     col_ref = {
-        "filename":      "Must match uploaded image filename exactly (case-sensitive)",
-        "business_name": "Injected into Artist EXIF field",
-        "service":       "Used in filename generation only",
-        "location":      "Used in filename generation only",
-        "lat":           "Decimal degrees, e.g. 24.8607 (use negative for S)",
-        "lng":           "Decimal degrees, e.g. 67.0011 (use negative for W)",
-        "keywords":      "Comma-separated, injected into XPKeywords + UserComment",
-        "description":   "Injected into ImageDescription EXIF field",
-        "copyright":     "Injected into Copyright EXIF field",
-        "date_taken":    "Format: YYYY-MM-DD",
+        "filename":         "Must match uploaded image filename exactly (case-sensitive)",
+        "business_name":    "Injected into Artist EXIF field",
+        "service":          "Used in filename generation only",
+        "location":         "Used in filename generation only",
+        "lat":              "Decimal degrees, e.g. 24.8607 (use negative for S)",
+        "lng":              "Decimal degrees, e.g. 67.0011 (use negative for W)",
+        "keywords":         "Comma-separated, injected into XPKeywords + UserComment",
+        "description":      "Injected into ImageDescription EXIF field",
+        "copyright":        "Injected into Copyright EXIF field",
+        "date_taken":       "Format: YYYY-MM-DD",
+        "rating":           "⭐ Star rating 1–5 (injected into EXIF Rating field)",
+        "subject_distance": "📐 Distance in metres — e.g. 1.5 — creates portrait depth signal for Google AI",
+        "camera_make":      "📱 Device brand — e.g. Apple, Samsung (signals authentic high-quality device)",
+        "camera_model":     "📱 Device model — e.g. iPhone 15 Pro (matches high-quality resolution signal)",
     }
     for col_n, col_d in col_ref.items():
         c1, c2 = st.columns([1, 3])
