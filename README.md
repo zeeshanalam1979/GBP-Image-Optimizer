@@ -1,6 +1,6 @@
-# 📍 GeoRank Pro
+# 📍 Enahnce Local SEO with GeoRank Pro Image Exif Injection Tool
 
-A professional Streamlit tool for injecting GPS coordinates, keywords, descriptions, and business metadata into images — built for Google Business Profile SEO workflows.
+A tool for injecting GPS coordinates, keywords, descriptions, and business metadata into images — built for Google Business Profile SEO workflows. Made by Zeeshan Alam, SR. SEO Engineer. https://www.linkedin.com/in/zeeshan-alam-seo-expert/
 
 ---
 
