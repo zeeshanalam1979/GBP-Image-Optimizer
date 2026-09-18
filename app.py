@@ -379,9 +379,14 @@ def inject_metadata(img_bytes, row, ext, output_format=None):
     if out_fmt == "JPEG":
         exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}}
 
-        desc = str(row.get("description", "")).encode("utf-8")
-        if desc:
-            exif_dict["0th"][piexif.ImageIFD.ImageDescription] = desc
+        desc_str = str(row.get("description", ""))
+        if desc_str:
+            exif_dict["0th"][piexif.ImageIFD.ImageDescription] = desc_str.encode("utf-8")
+            exif_dict["0th"][piexif.ImageIFD.XPTitle] = desc_str.encode("utf-16-le")
+
+        service_str = str(row.get("service", ""))
+        if service_str:
+            exif_dict["0th"][piexif.ImageIFD.XPSubject] = service_str.encode("utf-16-le")
 
         biz = str(row.get("business_name", "")).encode("utf-8")
         if biz:
@@ -502,6 +507,14 @@ def read_metadata(img_bytes):
             ifd0 = exif_dict.get("0th", {})
             if piexif.ImageIFD.ImageDescription in ifd0:
                 result["Description"] = ifd0[piexif.ImageIFD.ImageDescription].decode("utf-8", errors="replace")
+            if piexif.ImageIFD.XPTitle in ifd0:
+                raw_val = ifd0[piexif.ImageIFD.XPTitle]
+                if isinstance(raw_val, tuple): raw_val = bytes(raw_val)
+                result["Title"] = raw_val.decode("utf-16-le", errors="replace").rstrip("\x00")
+            if piexif.ImageIFD.XPSubject in ifd0:
+                raw_val = ifd0[piexif.ImageIFD.XPSubject]
+                if isinstance(raw_val, tuple): raw_val = bytes(raw_val)
+                result["Subject"] = raw_val.decode("utf-16-le", errors="replace").rstrip("\x00")
             if piexif.ImageIFD.Artist in ifd0:
                 result["Artist/Business"] = ifd0[piexif.ImageIFD.Artist].decode("utf-8", errors="replace")
             if piexif.ImageIFD.Copyright in ifd0:
@@ -949,12 +962,12 @@ with tab4:
     col_ref = {
         "filename":         "Must match uploaded image filename exactly (case-sensitive)",
         "business_name":    "Injected into Artist EXIF field",
-        "service":          "Used in filename generation only",
+        "service":          "Injected into XPSubject (Windows Subject) and used in filename generation",
         "location":         "Used in filename generation only",
         "lat":              "Decimal degrees, e.g. 24.8607 (use negative for S)",
         "lng":              "Decimal degrees, e.g. 67.0011 (use negative for W)",
         "keywords":         "Comma-separated, injected into XPKeywords + UserComment",
-        "description":      "Injected into ImageDescription EXIF field",
+        "description":      "Injected into ImageDescription and XPTitle (Windows Title)",
         "copyright":        "Injected into Copyright EXIF field",
         "date_taken":       "Format: YYYY-MM-DD",
         "rating":           "⭐ Star rating 1–5 (injected into EXIF Rating field)",
