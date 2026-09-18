@@ -6,6 +6,7 @@ import zipfile
 import io
 import os
 import re
+import html
 from PIL import Image
 from datetime import datetime
 from pathlib import Path
@@ -586,10 +587,14 @@ with st.sidebar:
         for pn, pd_ in profiles.items():
             col1, col2 = st.columns([4, 1])
             with col1:
+                safe_pn = html.escape(str(pn))
+                safe_lat = html.escape(str(pd_.get('lat', '?')))
+                safe_lng = html.escape(str(pd_.get('lng', '?')))
+                safe_city = html.escape(str(pd_.get('city', '')))
                 st.markdown(f"""
                 <div class="profile-card">
-                    <div class="profile-card-name">{pn}</div>
-                    <div class="profile-card-meta">📍 {pd_.get('lat','?')}, {pd_.get('lng','?')} · {pd_.get('city','')}</div>
+                    <div class="profile-card-name">{safe_pn}</div>
+                    <div class="profile-card-meta">📍 {safe_lat}, {safe_lng} · {safe_city}</div>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
@@ -644,7 +649,8 @@ with tab1:
 
         if single_img:
             st.image(single_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{single_img.name} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
+            safe_name = html.escape(single_img.name)
+            st.markdown(f'<div class="img-card-name">{safe_name} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
 
     with col_right:
         st.markdown('<div class="section-label">🏷️ Metadata Fields</div>', unsafe_allow_html=True)
@@ -768,8 +774,9 @@ with tab2:
                 with col:
                     img_file.seek(0)
                     st.image(img_file, use_container_width=True)
+                    safe_img_name = html.escape(img_file.name)
                     st.markdown(f"""
-                    <div class="img-card-name">{img_file.name}</div>
+                    <div class="img-card-name">{safe_img_name}</div>
                     <div class="img-card-status {status_cls}">{status_text}</div>
                     """, unsafe_allow_html=True)
 
@@ -872,7 +879,8 @@ with tab3:
         col_v1, col_v2 = st.columns([1, 2], gap="large")
         with col_v1:
             st.image(view_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{view_img.name}</div>', unsafe_allow_html=True)
+            safe_view_name = html.escape(view_img.name)
+            st.markdown(f'<div class="img-card-name">{safe_view_name}</div>', unsafe_allow_html=True)
 
         with col_v2:
             view_img.seek(0)
@@ -885,8 +893,10 @@ with tab3:
                         st.error(f"Parse error: {v}")
                     else:
                         c1, c2 = st.columns([1, 3])
-                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{k}</div>', unsafe_allow_html=True)
-                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{v}</div>', unsafe_allow_html=True)
+                        safe_k = html.escape(str(k))
+                        safe_v = html.escape(str(v))
+                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{safe_k}</div>', unsafe_allow_html=True)
+                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{safe_v}</div>', unsafe_allow_html=True)
                         st.markdown("")
 
                 # GPS map link
