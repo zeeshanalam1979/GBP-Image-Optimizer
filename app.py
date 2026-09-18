@@ -6,6 +6,7 @@ import zipfile
 import io
 import os
 import re
+import html
 from PIL import Image
 from datetime import datetime
 from pathlib import Path
@@ -644,7 +645,7 @@ with tab1:
 
         if single_img:
             st.image(single_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{single_img.name} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="img-card-name">{html.escape(single_img.name)} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
 
     with col_right:
         st.markdown('<div class="section-label">🏷️ Metadata Fields</div>', unsafe_allow_html=True)
@@ -769,7 +770,7 @@ with tab2:
                     img_file.seek(0)
                     st.image(img_file, use_container_width=True)
                     st.markdown(f"""
-                    <div class="img-card-name">{img_file.name}</div>
+                    <div class="img-card-name">{html.escape(img_file.name)}</div>
                     <div class="img-card-status {status_cls}">{status_text}</div>
                     """, unsafe_allow_html=True)
 
@@ -872,7 +873,7 @@ with tab3:
         col_v1, col_v2 = st.columns([1, 2], gap="large")
         with col_v1:
             st.image(view_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{view_img.name}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="img-card-name">{html.escape(view_img.name)}</div>', unsafe_allow_html=True)
 
         with col_v2:
             view_img.seek(0)
