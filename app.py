@@ -25,16 +25,16 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
 
 :root {
-    --bg:       #0a0e1a;
-    --surface:  #111827;
-    --card:     #1a2235;
-    --border:   #2a3548;
+    --bg:       var(--background-color);
+    --surface:  var(--secondary-background-color);
+    --card:     var(--secondary-background-color);
+    --border:   rgba(128, 128, 128, 0.2);
     --accent:   #00e5ff;
     --accent2:  #7c3aed;
     --success:  #10b981;
     --warn:     #f59e0b;
-    --text:     #e2e8f0;
-    --muted:    #64748b;
+    --text:     var(--text-color);
+    --muted:    rgba(128, 128, 128, 0.8);
     --danger:   #ef4444;
 }
 
@@ -52,7 +52,7 @@ html, body, [data-testid="stAppViewContainer"] {
 h1, h2, h3, h4 {
     font-family: 'Syne', sans-serif !important;
     font-weight: 800 !important;
-    color: #ffffff !important;
+    color: var(--text) !important;
 }
 
 /* ── ALL LABEL SELECTORS — comprehensive fix ── */
@@ -78,7 +78,7 @@ div[class*="stTextArea"] label,
 div[class*="stSelectbox"] label,
 .css-81oif8,
 .css-qrbaxs {
-    color: #ffffff !important;
+    color: var(--text) !important;
     font-size: 1rem !important;
     font-weight: 700 !important;
     font-family: 'Syne', sans-serif !important;
@@ -96,7 +96,7 @@ input[type="number"],
 textarea {
     background: var(--card) !important;
     border: 2px solid var(--border) !important;
-    color: #ffffff !important;
+    color: var(--text) !important;
     border-radius: 8px !important;
     font-family: 'Space Mono', monospace !important;
     font-size: 0.95rem !important;
@@ -109,7 +109,7 @@ textarea {
 .stTextArea > div > div > textarea::placeholder,
 input::placeholder,
 textarea::placeholder {
-    color: #6b8aaa !important;
+    color: var(--muted) !important;
     font-weight: 400 !important;
     opacity: 1 !important;
 }
@@ -188,13 +188,13 @@ div[data-testid="column"] { padding: 0.25rem !important; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
 
 /* Hero banner */
 .hero-banner {
-    background: linear-gradient(135deg, #111827 0%, #1a1040 50%, #0a1628 100%);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 2rem 2.5rem;
@@ -216,7 +216,7 @@ div[data-testid="column"] { padding: 0.25rem !important; }
     font-family: 'Syne', sans-serif;
     font-size: 2rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--text);
     margin: 0 0 0.3rem 0;
     letter-spacing: -0.02em;
 }
@@ -271,7 +271,7 @@ div[data-testid="column"] { padding: 0.25rem !important; }
     cursor: pointer;
     transition: all 0.2s;
 }
-.profile-card:hover { border-left-color: var(--accent); background: #1e2d44; }
+.profile-card:hover { border-left-color: var(--accent); opacity: 0.8; }
 .profile-card-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
 .profile-card-meta { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem; }
 
@@ -544,10 +544,10 @@ if "processed_files" not in st.session_state:
 with st.sidebar:
     st.markdown("""
     <div style='padding:0.5rem 0 1rem'>
-        <div style='font-family:Syne,sans-serif;font-size:1.3rem;font-weight:800;color:#fff'>
+        <div style='font-family:Syne,sans-serif;font-size:1.3rem;font-weight:800;color:var(--text-color)'>
             📍 GeoRank<span style='color:#00e5ff'> Pro</span>
         </div>
-        <div style='font-family:Space Mono,monospace;font-size:0.62rem;color:#64748b;letter-spacing:0.12em;text-transform:uppercase'>
+        <div style='font-family:Space Mono,monospace;font-size:0.62rem;color:var(--text-color);opacity:0.7;letter-spacing:0.12em;text-transform:uppercase'>
         Image Metadata Tool v1.0
         </div>
     </div>
@@ -895,8 +895,8 @@ with tab3:
                         c1, c2 = st.columns([1, 3])
                         safe_k = html.escape(str(k))
                         safe_v = html.escape(str(v))
-                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{safe_k}</div>', unsafe_allow_html=True)
-                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{safe_v}</div>', unsafe_allow_html=True)
+                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:var(--text-color);opacity:0.7;padding-top:0.3rem">{safe_k}</div>', unsafe_allow_html=True)
+                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:var(--text-color);background:var(--secondary-background-color);padding:0.3rem 0.6rem;border-radius:6px;border:1px solid rgba(128,128,128,0.2)">{safe_v}</div>', unsafe_allow_html=True)
                         st.markdown("")
 
                 # GPS map link
@@ -975,4 +975,4 @@ with tab4:
     for col_n, col_d in col_ref.items():
         c1, c2 = st.columns([1, 3])
         c1.markdown(f'<span class="tag-pill">{col_n}</span>', unsafe_allow_html=True)
-        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.72rem;color:#94a3b8;padding-top:0.4rem">{col_d}</div>', unsafe_allow_html=True)
+        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.72rem;color:var(--text-color);opacity:0.7;padding-top:0.4rem">{col_d}</div>', unsafe_allow_html=True)
