@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import piexif
+import html
 import json
 import zipfile
 import io
@@ -644,7 +645,7 @@ with tab1:
 
         if single_img:
             st.image(single_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{single_img.name} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="img-card-name">{html.escape(str(single_img.name))} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
 
     with col_right:
         st.markdown('<div class="section-label">🏷️ Metadata Fields</div>', unsafe_allow_html=True)
@@ -769,8 +770,8 @@ with tab2:
                     img_file.seek(0)
                     st.image(img_file, use_container_width=True)
                     st.markdown(f"""
-                    <div class="img-card-name">{img_file.name}</div>
-                    <div class="img-card-status {status_cls}">{status_text}</div>
+                    <div class="img-card-name">{html.escape(str(img_file.name))}</div>
+                    <div class="img-card-status {status_cls}">{html.escape(str(status_text))}</div>
                     """, unsafe_allow_html=True)
 
         matched_count = sum(1 for f in batch_imgs if f.name in csv_fnames)
@@ -872,7 +873,7 @@ with tab3:
         col_v1, col_v2 = st.columns([1, 2], gap="large")
         with col_v1:
             st.image(view_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{view_img.name}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="img-card-name">{html.escape(str(view_img.name))}</div>', unsafe_allow_html=True)
 
         with col_v2:
             view_img.seek(0)
@@ -885,8 +886,8 @@ with tab3:
                         st.error(f"Parse error: {v}")
                     else:
                         c1, c2 = st.columns([1, 3])
-                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{k}</div>', unsafe_allow_html=True)
-                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{v}</div>', unsafe_allow_html=True)
+                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{html.escape(str(k))}</div>', unsafe_allow_html=True)
+                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{html.escape(str(v))}</div>', unsafe_allow_html=True)
                         st.markdown("")
 
                 # GPS map link
