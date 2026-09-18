@@ -6,6 +6,8 @@ import zipfile
 import io
 import os
 import re
+import html
+import urllib.parse
 from PIL import Image
 from datetime import datetime
 from pathlib import Path
@@ -644,7 +646,8 @@ with tab1:
 
         if single_img:
             st.image(single_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{single_img.name} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
+            safe_name = html.escape(str(single_img.name))
+            st.markdown(f'<div class="img-card-name">{safe_name} · {round(single_img.size/1024,1)} KB</div>', unsafe_allow_html=True)
 
     with col_right:
         st.markdown('<div class="section-label">🏷️ Metadata Fields</div>', unsafe_allow_html=True)
@@ -872,7 +875,8 @@ with tab3:
         col_v1, col_v2 = st.columns([1, 2], gap="large")
         with col_v1:
             st.image(view_img, use_container_width=True)
-            st.markdown(f'<div class="img-card-name">{view_img.name}</div>', unsafe_allow_html=True)
+            safe_view_name = html.escape(str(view_img.name))
+            st.markdown(f'<div class="img-card-name">{safe_view_name}</div>', unsafe_allow_html=True)
 
         with col_v2:
             view_img.seek(0)
@@ -884,16 +888,21 @@ with tab3:
                     if k == "error":
                         st.error(f"Parse error: {v}")
                     else:
+                        safe_k = html.escape(str(k))
+                        safe_v = html.escape(str(v))
                         c1, c2 = st.columns([1, 3])
-                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{k}</div>', unsafe_allow_html=True)
-                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{v}</div>', unsafe_allow_html=True)
+                        c1.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.75rem;color:#64748b;padding-top:0.3rem">{safe_k}</div>', unsafe_allow_html=True)
+                        c2.markdown(f'<div style="font-family:Space Mono,monospace;font-size:0.8rem;color:#e2e8f0;background:#1a2235;padding:0.3rem 0.6rem;border-radius:6px;border:1px solid #2a3548">{safe_v}</div>', unsafe_allow_html=True)
                         st.markdown("")
 
                 # GPS map link
                 if "GPS" in meta:
                     lat_v, lng_v = meta["GPS"].split(",")
-                    maps_url = f"https://www.google.com/maps?q={lat_v.strip()},{lng_v.strip()}"
-                    st.markdown(f'<a href="{maps_url}" target="_blank" style="font-family:Space Mono,monospace;font-size:0.75rem;color:#00e5ff;text-decoration:none">🗺️ View on Google Maps →</a>', unsafe_allow_html=True)
+                    safe_lat = urllib.parse.quote(lat_v.strip())
+                    safe_lng = urllib.parse.quote(lng_v.strip())
+                    maps_url = f"https://www.google.com/maps?q={safe_lat},{safe_lng}"
+                    safe_maps_url = html.escape(maps_url)
+                    st.markdown(f'<a href="{safe_maps_url}" target="_blank" style="font-family:Space Mono,monospace;font-size:0.75rem;color:#00e5ff;text-decoration:none">🗺️ View on Google Maps →</a>', unsafe_allow_html=True)
             else:
                 st.warning("No readable EXIF metadata found in this image.")
 
