@@ -800,6 +800,13 @@ with tab2:
 
                 progress = st.progress(0, text="Processing images…")
 
+                # Pre-compute dictionary map to avoid O(N^2) DataFrame filtering inside the loop
+                csv_map = {}
+                for row in df.to_dict("records"):
+                    # Only take the first matching row to match original behavior `.iloc[0]`
+                    if row.get("filename") not in csv_map:
+                        csv_map[row.get("filename")] = row
+
                 with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for idx, img_file in enumerate(batch_imgs):
                         fname = img_file.name
@@ -808,7 +815,10 @@ with tab2:
                         if fname not in csv_fnames:
                             continue
 
-                        csv_row = df[df["filename"] == fname].iloc[0].to_dict()
+                        csv_row = csv_map.get(fname)
+                        if csv_row is None:
+                            csv_row = {}
+
                         orig_ext = fname.rsplit(".", 1)[-1]
 
                         try:
